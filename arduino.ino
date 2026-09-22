@@ -12,9 +12,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 const int moisturePin = A0; // সেন্সরের AO পিন আর্ডুইনোর A0-তে
 const int buzzerPin = D6;    // বাজার আর্ডুইনোর D6 পিনে
 
-// সেন্সরের শুকনো ও ভেজা অবস্থার মান (প্রয়োজনে টিউন করে নিতে পারেন)
-const int AirValue = 800;   // সম্পূর্ণ শুকনো বাতাসে মান
-const int WaterValue = 350; // পানিতে বা খুব ভেজা মাটিতে মান
+// সেন্সরের শুকনো ও ভেজা অবস্থার মান (ক্যালিব্রেশন)
+const int AirValue = 800;   // সম্পূর্ণ শুকনো বাতাসে অ্যানালগ মান
+const int WaterValue = 350; // পানিতে বা খুব ভেজা মাটিতে অ্যানালগ মান
 
 void setup() {
   pinMode(buzzerPin, OUTPUT);
@@ -30,33 +30,51 @@ void setup() {
 }
 
 void loop() {
-  // সেন্সর থেকে অ্যানালগ রিডিং নেওয়া
-  int sensorValue = analogRead(moisturePin);
+  // ১. সেন্সর থেকে অ্যানালগ ডেটা (Raw Data) পড়া
+  int rawValue = analogRead(moisturePin);
 
-  // অ্যানালগ রিডিংকে ০% থেকে ১০০% এ রূপান্তর করা
-  int moisturePercent = map(sensorValue, AirValue, WaterValue, 0, 100);
-  
-  // মান যেন ০% থেকে ১০০% এর বাইরে না যায়
+  // ২. অ্যানালগ মানকে ০% থেকে ১০০% এ রূপান্তর করা
+  int moisturePercent = map(rawValue, AirValue, WaterValue, 0, 100);
   moisturePercent = constrain(moisturePercent, 0, 100);
 
-  // OLED ডিসপ্লেতে ডাটা দেখানো
+  // ৩. আধুনিক OLED ডিসপ্লে ডিজাইন
   display.clearDisplay();
   
+  // শিরোনাম (Header)
   display.setTextSize(1);
-  display.setCursor(15, 0);
+  display.setCursor(18, 0);
   display.print("SOIL MONITORING");
-  display.drawLine(0, 10, 128, 10, SSD1306_WHITE);
+  display.drawLine(0, 10, 128, 10, SSD1306_WHITE); // ওপরের পার্টিশন লাইন
 
+  // --- বাম পাশ: পার্সেন্টেজ (%) ---
+  display.setTextSize(1);
+  display.setCursor(5, 16);
+  display.print("MOISTURE");
+  
   display.setTextSize(2);
-  display.setCursor(10, 20);
-  display.print("Moist: ");
+  display.setCursor(5, 28);
   display.print(moisturePercent);
   display.print("%");
 
-  display.setTextSize(1);
-  display.setCursor(10, 48);
+  // --- মাঝখানের খাড়া বাউন্ডারি লাইন ---
+  display.drawFastVLine(64, 12, 38, SSD1306_WHITE);
 
-  // ২৫% এর কম হলে বাজার বাজবে এবং সতর্কবার্তা দেখাবে
+  // --- ডান পাশ: অ্যানালগ/ডিজিটাল র ডেটা (Raw Value) ---
+  display.setTextSize(1);
+  display.setCursor(72, 16);
+  display.print("RAW DATA");
+
+  display.setTextSize(2);
+  display.setCursor(72, 28);
+  display.print(rawValue);
+
+  // নিচের পার্টিশন লাইন
+  display.drawLine(0, 50, 128, 50, SSD1306_WHITE);
+
+  // --- নিচের অংশ: স্ট্যাটাস ও বাজার কন্ডিশন ---
+  display.setTextSize(1);
+  display.setCursor(5, 54);
+
   if (moisturePercent < 25) {
     display.print("Status: VERY DRY!");
     digitalWrite(buzzerPin, HIGH); // বাজার চালু
@@ -74,5 +92,6 @@ void loop() {
   }
 
   display.display();
-  delay(500); // প্রতি আধা সেকেন্ড পর পর আপডেট হবে
+  delay(500); // প্রতি আধা সেকেন্ড পর পর ডিসপ্লে আপডেট হবে
 }
+
