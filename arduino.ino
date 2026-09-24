@@ -1,32 +1,24 @@
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <LiquidCrystal_I2C.h>
 
-// OLED ডিসপ্লে সাইজ সেটআপ (128x64 pixels)
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// I2C LCD ডিসপ্লে সেটআপ (অ্যাড্রেস 0x27, ১৬ কলাম, ২ সারি)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // পিন ডিফাইন
 const int moisturePin = A0; // সেন্সরের AO পিন আর্ডুইনোর A0-তে
-const int buzzerPin = D6;    // বাজার আর্ডুইনোর D6 পিনে
+const int buzzerPin = 6; // বাজার আর্ডুইনোর D6 পিনে
 
 // সেন্সরের শুকনো ও ভেজা অবস্থার মান (ক্যালিব্রেশন)
-const int AirValue = 800;   // সম্পূর্ণ শুকনো বাতাসে অ্যানালগ মান
+const int AirValue = 800; // সম্পূর্ণ শুকনো বাতাসে অ্যানালগ মান
 const int WaterValue = 350; // পানিতে বা খুব ভেজা মাটিতে অ্যানালগ মান
 
 void setup() {
   pinMode(buzzerPin, OUTPUT);
   digitalWrite(buzzerPin, LOW); // শুরুতে বাজার বন্ধ থাকবে
 
-  // OLED ডিসপ্লে চালু করা
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
-    for(;;); // ডিসপ্লে না পেলে আটকে থাকবে
-  }
-
-  display.clearDisplay();
-  display.setTextColor(SSD1306_WHITE);
+  // LCD ডিসপ্লে চালু করা
+  lcd.init();          
+  lcd.backlight();     // ব্যাকলাইট অন করা
 }
 
 void loop() {
@@ -37,61 +29,34 @@ void loop() {
   int moisturePercent = map(rawValue, AirValue, WaterValue, 0, 100);
   moisturePercent = constrain(moisturePercent, 0, 100);
 
-  // ৩. আধুনিক OLED ডিসপ্লে ডিজাইন
-  display.clearDisplay();
+  // ৩. LCD ডিসপ্লে ডিজাইন (১ম লাইন)
+  lcd.setCursor(0, 0);
+  lcd.print("M:");
+  lcd.print(moisturePercent);
+  lcd.print("% ");
   
-  // শিরোনাম (Header)
-  display.setTextSize(1);
-  display.setCursor(18, 0);
-  display.print("SOIL MONITORING");
-  display.drawLine(0, 10, 128, 10, SSD1306_WHITE); // ওপরের পার্টিশন লাইন
+  lcd.print("Raw:");
+  lcd.print(rawValue);
+  lcd.print("   "); // আগের কোনো বড় সংখ্যা থাকলে তা মুছে ফেলার জন্য অতিরিক্ত স্পেস
 
-  // --- বাম পাশ: পার্সেন্টেজ (%) ---
-  display.setTextSize(1);
-  display.setCursor(5, 16);
-  display.print("MOISTURE");
-  
-  display.setTextSize(2);
-  display.setCursor(5, 28);
-  display.print(moisturePercent);
-  display.print("%");
-
-  // --- মাঝখানের খাড়া বাউন্ডারি লাইন ---
-  display.drawFastVLine(64, 12, 38, SSD1306_WHITE);
-
-  // --- ডান পাশ: অ্যানালগ/ডিজিটাল র ডেটা (Raw Value) ---
-  display.setTextSize(1);
-  display.setCursor(72, 16);
-  display.print("RAW DATA");
-
-  display.setTextSize(2);
-  display.setCursor(72, 28);
-  display.print(rawValue);
-
-  // নিচের পার্টিশন লাইন
-  display.drawLine(0, 50, 128, 50, SSD1306_WHITE);
-
-  // --- নিচের অংশ: স্ট্যাটাস ও বাজার কন্ডিশন ---
-  display.setTextSize(1);
-  display.setCursor(5, 54);
+  // ৪. LCD ডিসপ্লে ডিজাইন (২য় লাইন - স্ট্যাটাস)
+  lcd.setCursor(0, 1);
 
   if (moisturePercent < 25) {
-    display.print("Status: VERY DRY!");
+    lcd.print("Status: DRY!    ");
     digitalWrite(buzzerPin, HIGH); // বাজার চালু
     delay(200);
-    digitalWrite(buzzerPin, LOW);  // বিপ বিপ শব্দের জন্য
+    digitalWrite(buzzerPin, LOW); // বিপ বিপ শব্দের জন্য
   } else if (moisturePercent >= 25 && moisturePercent < 50) {
-    display.print("Status: DRY");
-    digitalWrite(buzzerPin, LOW);  // বাজার বন্ধ
+    lcd.print("Status: DRY     ");
+    digitalWrite(buzzerPin, LOW); // বাজার বন্ধ
   } else if (moisturePercent >= 50 && moisturePercent < 75) {
-    display.print("Status: PERFECT");
-    digitalWrite(buzzerPin, LOW);  // বাজার বন্ধ
+    lcd.print("Status: PERFECT ");
+    digitalWrite(buzzerPin, LOW); // বাজার বন্ধ
   } else {
-    display.print("Status: TOO WET");
-    digitalWrite(buzzerPin, LOW);  // বাজার বন্ধ
+    lcd.print("Status: TOO WET ");
+    digitalWrite(buzzerPin, LOW); // বাজার বন্ধ
   }
 
-  display.display();
   delay(500); // প্রতি আধা সেকেন্ড পর পর ডিসপ্লে আপডেট হবে
 }
-
