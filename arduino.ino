@@ -1,5 +1,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h> // এই লাইনটি যোগ করুন
+SoftwareSerial BT(2, 3);    // এই লাইনটি যোগ করুন (RX=2, TX=3)
+
 
 // I2C LCD ডিসপ্লে সেটআপ (অ্যাড্রেস 0x27, ১৬ কলাম, ২ সারি)
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -19,6 +22,8 @@ void setup() {
   // LCD ডিসপ্লে চালু করা
   lcd.init();          
   lcd.backlight();     // ব্যাকলাইট অন করা
+  BT.begin(9600); // এই লাইনটি setup() এর ভেতরে যোগ করুন
+  
 }
 
 void loop() {
@@ -57,6 +62,12 @@ void loop() {
     lcd.print("Status: TOO WET ");
     digitalWrite(buzzerPin, LOW); // বাজার বন্ধ
   }
+    // এই অংশটুকু loop() এর শেষে যোগ করুন
+  BT.print("M: ");
+  BT.print(moisturePercent);
+  BT.print("% | Raw: ");
+  BT.println(rawValue);
+  
 
   delay(500); // প্রতি আধা সেকেন্ড পর পর ডিসপ্লে আপডেট হবে
 }
