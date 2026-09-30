@@ -4,8 +4,8 @@
 SoftwareSerial BT(2, 3);    // এই লাইনটি যোগ করুন (RX=2, TX=3)
 
 
-// I2C LCD ডিসপ্লে সেটআপ (অ্যাড্রেস 0x27, ১৬ কলাম, ২ সারি)
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+// I2C LCD ডিসপ্লে সেটআপ (অ্যাড্রেস 0x3F, ১৬ কলাম, ২ সারি)
+LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
 // পিন ডিফাইন
 const int moisturePin = A0; // সেন্সরের AO পিন আর্ডুইনোর A0-তে
@@ -37,12 +37,17 @@ void loop() {
   // ৩. LCD ডিসপ্লে ডিজাইন (১ম লাইন)
   lcd.setCursor(0, 0);
   lcd.print("M:");
+  if (moisturePercent < 10) lcd.print("  ");
+  else if (moisturePercent < 100) lcd.print(" ");
   lcd.print(moisturePercent);
-  lcd.print("% ");
+  lcd.print("%");
   
-  lcd.print("Raw:");
+  lcd.print(" R:");
+  if (rawValue < 10) lcd.print("   ");
+  else if (rawValue < 100) lcd.print("  ");
+  else if (rawValue < 1000) lcd.print(" ");
   lcd.print(rawValue);
-  lcd.print("   "); // আগের কোনো বড় সংখ্যা থাকলে তা মুছে ফেলার জন্য অতিরিক্ত স্পেস
+  lcd.print(" ");
 
   // ৪. LCD ডিসপ্লে ডিজাইন (২য় লাইন - স্ট্যাটাস)
   lcd.setCursor(0, 1);
